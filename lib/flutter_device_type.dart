@@ -86,18 +86,22 @@ class Device {
     var isIphoneX = false;
     var hasNotch = false;
 
+    // Logical resolutions: https://www.ios-resolution.com
+    // Apple devices with notch: https://apple.fandom.com/wiki/Notch
     if (isIos &&
         isPhone &&
-        (screenHeight == 812 ||
-            screenWidth == 812 ||
-            screenHeight == 896 ||
-            screenWidth == 896 ||
-            // iPhone 12 pro
-            screenHeight == 844 ||
-            screenWidth == 844 ||
-            // Iphone 12 pro max
-            screenHeight == 926 ||
-            screenWidth == 926)) {
+        // iPhone x, xs, 11 pro, 12 mini, 13 mini
+        ((screenHeight == 812 && screenWidth == 375) ||
+            // iPhone 12, 12 pro, 13, 13 pro, 14
+            (screenHeight == 844 && screenWidth == 390) ||
+            // iPhone 14 pro
+            (screenHeight == 852 && screenWidth == 393) ||
+            // iPhone xr, xs max, 11, 11 pro max
+            (screenHeight == 896 && screenWidth == 414) ||
+            // iPhone 12 pro max, 13 pro max, 14 plus
+            (screenHeight == 926 && screenWidth == 428) ||
+            // iPhone 14 pro max
+            (screenHeight == 932 && screenWidth == 430))) {
       isIphoneX = true;
       hasNotch = true;
     }
