@@ -1,54 +1,56 @@
 library flutter_device_type;
 
 import 'dart:io';
-import 'dart:ui' as ui;
-import 'dart:math' as Math;
+import 'dart:math';
+import 'dart:ui';
+
+import 'package:flutter/widgets.dart';
 
 class Device {
-  static double devicePixelRatio = ui.window.devicePixelRatio;
-  static ui.Size size = ui.window.physicalSize;
-  static double width = size.width;
-  static double height = size.height;
-  static double screenWidth = width / devicePixelRatio;
-  static double screenHeight = height / devicePixelRatio;
-  static ui.Size screenSize = new ui.Size(screenWidth, screenHeight);
-  final bool isTablet, isPhone, isIos, isAndroid, isIphoneX, hasNotch;
-  static Device? _device;
-  static Function? onMetricsChange;
+  Device({
+    required this.isTablet,
+    required this.isPhone,
+    required this.isIos,
+    required this.isAndroid,
+    required this.isIphoneX,
+    required this.hasNotch,
+  });
 
-  Device(
-      {required this.isTablet,
-      required this.isPhone,
-      required this.isIos,
-      required this.isAndroid,
-      required this.isIphoneX,
-      required this.hasNotch});
+  final bool isTablet;
+  final bool isPhone;
+  final bool isIos;
+  final bool isAndroid;
+  final bool isIphoneX;
+  final bool hasNotch;
 
   factory Device.get() {
-    if (_device != null) return _device!;
+    if (_device == null) {
+      _device = _createDevice();
+    }
+    return _device!;
+  }
 
-    if (onMetricsChange == null) {
-      onMetricsChange = ui.window.onMetricsChanged;
-      ui.window.onMetricsChanged = () {
+  static Device _createDevice() {
+    if (onMetricsChanged == null) {
+      onMetricsChanged =
+          WidgetsBinding.instance.platformDispatcher.onMetricsChanged;
+
+      WidgetsBinding.instance.platformDispatcher.onMetricsChanged = () {
         _device = null;
 
-        size = ui.window.physicalSize;
+        size = _view.physicalSize;
         width = size.width;
         height = size.height;
         screenWidth = width / devicePixelRatio;
         screenHeight = height / devicePixelRatio;
-        screenSize = new ui.Size(screenWidth, screenHeight);
+        screenSize = Size(screenWidth, screenHeight);
 
-        onMetricsChange!();
+        onMetricsChanged!();
       };
     }
 
     bool isTablet;
     bool isPhone;
-    bool isIos = Platform.isIOS;
-    bool isAndroid = Platform.isAndroid;
-    bool isIphoneX = false;
-    bool hasNotch = false;
 
     if (devicePixelRatio < 2 && (width >= 1000 || height >= 1000)) {
       isTablet = true;
@@ -62,13 +64,12 @@ class Device {
     }
 
     // Recalculate for Android Tablet using device inches
+    final isAndroid = Platform.isAndroid;
     if (isAndroid) {
-      final adjustedWidth = _calWidth() / devicePixelRatio;
-      final adjustedHeight = _calHeight() / devicePixelRatio;
-      final diagonalSizeInches = (Math.sqrt(
-              Math.pow(adjustedWidth, 2) + Math.pow(adjustedHeight, 2))) /
-          _ppi;
-      //print("Dialog size inches is $diagonalSizeInches");
+      final adjustedWidth = _calcWidth / devicePixelRatio;
+      final adjustedHeight = _calcHeight / devicePixelRatio;
+      final diagonalSizeInches =
+          (sqrt(pow(adjustedWidth, 2) + pow(adjustedHeight, 2))) / _ppi;
       if (diagonalSizeInches >= 7) {
         isTablet = true;
         isPhone = false;
@@ -77,6 +78,10 @@ class Device {
         isPhone = true;
       }
     }
+
+    final isIos = Platform.isIOS;
+    var isIphoneX = false;
+    var hasNotch = false;
 
     if (isIos &&
         isPhone &&
@@ -94,30 +99,44 @@ class Device {
       hasNotch = true;
     }
 
-    if (_hasTopOrBottomPadding()) hasNotch = true;
+    if (_hasTopOrBottomPadding) {
+      hasNotch = true;
+    }
 
-    return _device = new Device(
-        isTablet: isTablet,
-        isPhone: isPhone,
-        isAndroid: isAndroid,
-        isIos: isIos,
-        isIphoneX: isIphoneX,
-        hasNotch: hasNotch);
+    return _device = Device(
+      isTablet: isTablet,
+      isPhone: isPhone,
+      isAndroid: isAndroid,
+      isIos: isIos,
+      isIphoneX: isIphoneX,
+      hasNotch: hasNotch,
+    );
   }
 
-  static double _calWidth() {
-    if (width > height)
-      return (width +
-          (ui.window.viewPadding.left + ui.window.viewPadding.right) *
-              width /
-              height);
-    return (width + ui.window.viewPadding.left + ui.window.viewPadding.right);
-  }
+  /// Helper method to do a rudimentary check whether the device is a phone,
+  /// or a bigger device based on the given [Size].
+  static bool isDevicePhone(Size deviceSize) => deviceSize.shortestSide < 550;
 
-  static double _calHeight() {
-    return (height +
-        (ui.window.viewPadding.top + ui.window.viewPadding.bottom));
-  }
+  static double devicePixelRatio = _view.devicePixelRatio;
+  static Size size = _view.physicalSize;
+  static double width = size.width;
+  static double height = size.height;
+  static double screenWidth = width / devicePixelRatio;
+  static double screenHeight = height / devicePixelRatio;
+  static Size screenSize = Size(screenWidth, screenHeight);
+  static Function? onMetricsChanged;
+
+  static Device? _device;
+
+  static double get _calcWidth => width > height
+      ? width + (_viewPadding.left + _viewPadding.right) * width / height
+      : width + _viewPadding.left + _viewPadding.right;
+
+  static double get _calcHeight =>
+      height + (_viewPadding.top + _viewPadding.bottom);
+
+  static bool get _hasTopOrBottomPadding =>
+      _viewPadding.top > 0 || _viewPadding.bottom > 0;
 
   static int get _ppi => Platform.isAndroid
       ? 160
@@ -125,9 +144,7 @@ class Device {
           ? 150
           : 96;
 
-  static bool _hasTopOrBottomPadding() {
-    final padding = ui.window.viewPadding;
-    //print(padding);
-    return padding.top > 0 || padding.bottom > 0;
-  }
+  static FlutterView get _view => PlatformDispatcher.instance.views.first;
+
+  static ViewPadding get _viewPadding => _view.viewPadding;
 }
