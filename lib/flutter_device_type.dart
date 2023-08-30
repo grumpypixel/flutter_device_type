@@ -4,24 +4,27 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/widgets.dart';
 
 class Device {
   Device({
-    required this.isTablet,
-    required this.isPhone,
-    required this.isIos,
     required this.isAndroid,
+    required this.isIos,
+    required this.isPhone,
+    required this.isTablet,
     required this.isIphoneX,
     required this.hasNotch,
+    required this.isWeb,
   });
 
-  final bool isTablet;
-  final bool isPhone;
-  final bool isIos;
   final bool isAndroid;
+  final bool isIos;
+  final bool isPhone;
+  final bool isTablet;
   final bool isIphoneX;
   final bool hasNotch;
+  final bool isWeb;
 
   factory Device.get() {
     if (_device == null) {
@@ -64,7 +67,7 @@ class Device {
     }
 
     // Recalculate for Android Tablet using device inches
-    final isAndroid = Platform.isAndroid;
+    bool isAndroid = !kIsWeb && Platform.isAndroid;
     if (isAndroid) {
       final adjustedWidth = _calcWidth / devicePixelRatio;
       final adjustedHeight = _calcHeight / devicePixelRatio;
@@ -79,7 +82,7 @@ class Device {
       }
     }
 
-    final isIos = Platform.isIOS;
+    bool isIos = !kIsWeb && Platform.isIOS;
     var isIphoneX = false;
     var hasNotch = false;
 
@@ -110,6 +113,7 @@ class Device {
       isIos: isIos,
       isIphoneX: isIphoneX,
       hasNotch: hasNotch,
+      isWeb: kIsWeb,
     );
   }
 
@@ -138,9 +142,9 @@ class Device {
   static bool get _hasTopOrBottomPadding =>
       _viewPadding.top > 0 || _viewPadding.bottom > 0;
 
-  static int get _ppi => Platform.isAndroid
+  static int get _ppi => !kIsWeb && Platform.isAndroid
       ? 160
-      : Platform.isIOS
+      : !kIsWeb && Platform.isIOS
           ? 150
           : 96;
 
